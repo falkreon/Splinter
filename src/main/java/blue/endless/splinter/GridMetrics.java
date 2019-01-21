@@ -1,5 +1,6 @@
 package blue.endless.splinter;
 
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 /**
@@ -24,8 +25,8 @@ public class GridMetrics {
 	
 	/** Enlarges the grid if necessary to contain the specified cell coordinates */
 	public void ensureSpaceFor(int x, int y) {
-		width = Math.min(width, x+1);
-		height = Math.min(height, y+1);
+		width = Math.max(width, x+1);
+		height = Math.max(height, y+1);
 		
 		xMetrics = reserve(xMetrics, x);
 		yMetrics = reserve(yMetrics, y);
@@ -56,7 +57,7 @@ public class GridMetrics {
 	
 	/**
 	 * Gets an array containing metrics for each row of the represented grid. The array may be larger than necessary, but is guaranteed not to be smaller than {@link #getHeight()}.
-	 * DO NOT MODIFY the returned array!
+	 * DO NOT MODIFY the returned array! Only Layout is allowed to do that
 	 */
 	public Element[] getRows() {
 		return yMetrics;
@@ -64,23 +65,24 @@ public class GridMetrics {
 	
 	/**
 	 * Gets an array containing metrics for each column of the represented grid. The array may be larger than necessary, but is guaranteed not to be smaller than {@link #getWidth()}.
-	 * DO NOT MODIFY the returned array!
+	 * DO NOT MODIFY the returned array! Only Layout is allowed to do that
 	 */
 	public Element[] getColumns() {
 		return xMetrics;
 	}
 	
 	/** Merges the given layoutMetrics with the existing ones */
-	public void addElementMetrics(LayoutElementMetrics metrics, int x, int y) {
-		if (!checkBounds(x,y)) return;
+	public void addElementMetrics(LayoutElementMetrics metrics) {
+		if (metrics.cellX<0 || metrics.cellY<0) return;
+		ensureSpaceFor(metrics.cellX, metrics.cellY);
 		
-		Element column = xMetrics[x];
-		if (column==null) {
-			column = new Element();
-			xMetrics[x] = column;
-		}
+		Element column = xMetrics[metrics.cellX];
+		column.fixedSize = Math.max(column.fixedSize, metrics.fixedMinX);
+		column.relativeSize = Math.max(column.relativeSize, metrics.relativeMinX);
 		
-		
+		Element row = yMetrics[metrics.cellY];
+		row.fixedSize =  Math.max(row.fixedSize, metrics.fixedMinY);
+		row.relativeSize = Math.max(row.relativeSize, metrics.relativeMinY);
 	}
 	
 	protected void recalcStarts() {
@@ -121,6 +123,11 @@ public class GridMetrics {
 		return x>=0 && y>=0 && x<width && y<height;
 	}
 	
+	@Override
+	public String toString() {
+		return "{ width: "+width+", height: "+height+", xMetrics: "+Arrays.toString(xMetrics)+", yMetrics: "+Arrays.toString(yMetrics)+" }";
+	}
+	
 	/** Represents metrics for one row or column */
 	public static class Element {
 		int fixedSize = 0;
@@ -128,5 +135,10 @@ public class GridMetrics {
 		
 		int location = 0;
 		int size = 0;
+		
+		@Override
+		public String toString() {
+			return "{ fixedSize: "+fixedSize+", relativeSize: "+relativeSize+", location: "+location+", size: "+size+" }";
+		}
 	}
 }

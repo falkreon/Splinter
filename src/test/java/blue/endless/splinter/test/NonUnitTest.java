@@ -21,7 +21,7 @@ public class NonUnitTest {
 		test1.backgroundColor = Color.DARK_GRAY;
 		test1.borderColor = Color.RED;
 		rootPanel.add(test1, 0, 0);
-		rootPanel.getMetrics(test1).setMinPercentHeight(25);
+		rootPanel.getMetrics(test1).setMinimumHeight(100);
 		
 		Rectangle a1 = new Rectangle();
 		a1.borderColor = new Color(0,0,0,0);
@@ -42,13 +42,13 @@ public class NonUnitTest {
 		test2.backgroundColor = Color.DARK_GRAY;
 		test2.borderColor = Color.GREEN;
 		rootPanel.add(test2, 0, 1);
-		rootPanel.getMetrics(test2).setMinPercentHeight(25);
+		rootPanel.getMetrics(test2).setMinimumHeight(100);
 		
 		Rectangle test3 = new Rectangle();
 		test3.backgroundColor = Color.DARK_GRAY;
 		test3.borderColor = Color.BLUE;
 		rootPanel.add(test3, 0,2);
-		rootPanel.getMetrics(test3).setMinPercentHeight(50);
+		//rootPanel.getMetrics(test3).setMinPercentHeight(50);
 		
 		
 		@SuppressWarnings("serial")

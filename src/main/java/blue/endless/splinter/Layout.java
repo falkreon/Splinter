@@ -24,21 +24,24 @@ public class Layout {
 		Map<LayoutElement, LayoutElementMetrics> elementData = new HashMap<>();
 		GridMetrics gridMetrics = new GridMetrics(); //TODO: Could we keep this as a static field, and clear and reuse this between layouts?
 		
-		int maxX = 0;
-		int maxY = 0;
+		//int maxX = 0;
+		//int maxY = 0;
 		for(LayoutElement elem : container.getLayoutChildren()) {
 			LayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
+			int minWidth = elem.getNaturalWidth();
+			if (minWidth>0) metrics.fixedMinX = Math.max(metrics.fixedMinX, minWidth);
+			int minHeight = elem.getNaturalHeight();
+			if (minHeight>0) metrics.fixedMinY = Math.max(metrics.fixedMinY, minHeight);
+			
 			elementData.put(elem, metrics);
-			maxX = Math.max(maxX, metrics.cellX+(metrics.cellsX-1));
-			maxY = Math.max(maxY, metrics.cellY+(metrics.cellsY-1));
+			gridMetrics.addElementMetrics(metrics);
 		}
-		
-		int gridWidth = maxX+1;
-		int gridHeight= maxY+1;
+
 		Set<LayoutElement> removed = new HashSet<>();
 		
+		/*
 		if (removeCollisions) {
-			LayoutElement[] collisionMap = new LayoutElement[gridWidth*gridHeight];
+			LayoutElement[] collisionMap = new LayoutElement[gridMetrics.width*gridMetrics.height];
 			for(Map.Entry<LayoutElement, LayoutElementMetrics> entry : elementData.entrySet()) {
 				LayoutElement elem = entry.getKey();
 				LayoutElementMetrics entryData = entry.getValue();
@@ -48,7 +51,7 @@ public class Layout {
 					for(int xi=0; xi<entryData.cellsX; xi++) {
 						int elemX = xi + entryData.cellX;
 						
-						int index = (elemY*gridWidth+elemX) % collisionMap.length;
+						int index = (elemY*gridMetrics.width+elemX) % collisionMap.length;
 						LayoutElement existing = collisionMap[index];
 						if (existing!=null) {
 							removed.add(elem);
@@ -61,46 +64,46 @@ public class Layout {
 			for(LayoutElement elem : removed) {
 				elementData.remove(elem);
 			}
+		}*/
+		
+		//Set initial sizes
+		setInitial(gridMetrics.xMetrics, gridMetrics.width, width);
+		setInitial(gridMetrics.yMetrics, gridMetrics.height, height);
+		
+		/*
+		for(GridMetrics.Element elem : gridMetrics.xMetrics) {
+			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*width));
 		}
 		
-		//X coordinate of the start of each column
-		ArrayList<Integer> columnStart = new ArrayList<>();
-		//Dimensions for each column
-		ArrayList<Integer> columnSize = new ArrayList<>();
+		for(GridMetrics.Element elem : gridMetrics.yMetrics) {
+			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*height));
+		}*/
 		
-		for(int i=0; i<gridWidth; i++) { columnStart.add(0); columnSize.add(0); }
-		
-		//X coordinate of the start of each column
-		ArrayList<Integer> rowStart = new ArrayList<>();
-		//Dimensions for each column
-		ArrayList<Integer> rowSize = new ArrayList<>();
-		
-		for(int i=0; i<gridHeight; i++) { rowStart.add(0); rowSize.add(0); }
+		//Preferentially grow elements that don't have a specific size declared
+		stretchUnspecified(gridMetrics.xMetrics, gridMetrics.width, width);
+		stretchUnspecified(gridMetrics.yMetrics, gridMetrics.height, height);
 		
 		
-		for(Map.Entry<LayoutElement, LayoutElementMetrics> entry : elementData.entrySet()) {
-			//FOR NOW, treat multi-column constraints as single-column constraints just to get us up and running with anything
-			int existingX = columnSize.get(entry.getValue().cellX);
-			int existingY = rowSize.get(entry.getValue().cellY);
-			
-			int minX = max(
-					entry.getKey().getNaturalWidth(),
-					entry.getValue().fixedMinX,
-					entry.getValue().relativeMinX*width,
-					existingX);
-			if (minX<0) minX=0;
-			
-			int minY = max(
-					entry.getKey().getNaturalHeight(),
-					entry.getValue().fixedMinY,
-					(int)((entry.getValue().relativeMinY/100.0)*height),
-					existingY);
-			if (minY<0) minY=0;
-			
-			columnSize.set(entry.getValue().cellX, minX);
-			rowSize.set(entry.getValue().cellY, minY);
+		//Stretch all elements equally
+		int leftoverX = width;
+		for(int i=0; i<gridMetrics.width; i++) {
+			leftoverX -= gridMetrics.getCellWidth(i);
+		}
+		int leftoverPerColumn = leftoverX / gridMetrics.width;
+		for(int i=0; i<gridMetrics.width; i++) {
+			gridMetrics.xMetrics[i].size += leftoverPerColumn;
 		}
 		
+		int leftoverY = height;
+		for(int i=0; i<gridMetrics.height; i++) {
+			leftoverY -= gridMetrics.getCellHeight(i);
+		}
+		int leftoverPerRow = leftoverY / gridMetrics.height;
+		for(int i=0; i<gridMetrics.height; i++) {
+			gridMetrics.yMetrics[i].size += leftoverPerRow;
+		}
+		
+		/*
 		//Sum up the columns and figure out how much we're over or under by, then distribute the overage/shortfall
 		//evenly between the columns
 		int leftoverX = width;
@@ -132,40 +135,42 @@ public class Layout {
 		for(int i=0; i<gridHeight; i++) {
 			rowStart.set(i, curY);
 			curY += rowSize.get(i);
-		}
+		}*/
+		
+		gridMetrics.recalcStarts();
 		
 		//If there's any shortfall left, add it to the last row or column.
-		int rightmostWidth = columnSize.get(gridWidth-1);
-		int rightmostStart = columnStart.get(gridWidth-1);
-		if (rightmostStart+rightmostWidth < width) {
-			rightmostWidth = (width)-rightmostStart;
-			columnSize.set(gridWidth-1, rightmostWidth);
+		GridMetrics.Element rightmost = gridMetrics.getColumns()[gridMetrics.getWidth()-1];
+		if (rightmost.location+rightmost.size < width) {
+			rightmost.size = (width)-rightmost.location;
 		}
 		
-		
-		int bottommostHeight = rowSize.get(gridHeight-1);
-		int bottommostStart = rowStart.get(gridHeight-1);
-		if (bottommostStart+bottommostHeight < height) {
-			bottommostHeight = (height)-bottommostStart;
-			rowSize.set(gridHeight-1, bottommostHeight);
+		GridMetrics.Element bottommost = gridMetrics.getRows()[gridMetrics.getHeight()-1];
+		if (bottommost.location+bottommost.size < height) {
+			bottommost.size = (height)-bottommost.location;
 		}
 		
-		
-		container.setGridMetrics(rowStart, rowSize, columnStart, columnSize);
+		//container.setGridMetrics(rowStart, rowSize, columnStart, columnSize);
+		//if (gridMetrics.height==3) System.out.println(gridMetrics);
 		
 		//Notify container of each component's geometry
 		for(Map.Entry<LayoutElement, LayoutElementMetrics> entry : elementData.entrySet()) {
 			LayoutElement elem = entry.getKey();
 			LayoutElementMetrics metrics = entry.getValue();
-			if (metrics.cellX<0 || metrics.cellX>=columnStart.size() || metrics.cellY<0 || metrics.cellY>=rowStart.size()) {
+			if (metrics.cellX<0 || metrics.cellY<0) {
 				//TODO: Do we want these values onscreen? Do we want to notify a component explicitly that layout has elected to zero it and hide it?
 				removed.add(elem);
 			} else {
+				/*
 				int cellX = columnStart.get(metrics.cellX);
 				int cellY = rowStart.get(metrics.cellY);
 				int cellWidth = columnSize.get(metrics.cellX);
-				int cellHeight = rowSize.get(metrics.cellY);
+				int cellHeight = rowSize.get(metrics.cellY);*/
 				//TODO: This merely defines the available space within which the component may be placed. Here, maximum values can be considered and the element can be aligned against its cell.
+				int cellX = gridMetrics.getCellLeft(metrics.cellX);
+				int cellY = gridMetrics.getCellTop(metrics.cellY);
+				int cellWidth = gridMetrics.getCellWidth(metrics.cellX);
+				int cellHeight = gridMetrics.getCellHeight(metrics.cellY);
 				
 				container.setLayoutValues(elem, cellX, cellY, cellWidth, cellHeight);
 				if (elem instanceof LayoutContainer) {
@@ -180,7 +185,31 @@ public class Layout {
 		}
 	}
 	
-	private static int max(int a, int b, int c, int d) {
-		return Math.max(Math.max(Math.max(a, b), c), d);
+	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize) {
+		for(int i=0; i<num; i++) {
+			GridMetrics.Element elem = elements[i];
+			
+			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*totalSize));
+		}
+	}
+	
+	private static int stretchUnspecified(GridMetrics.Element[] elements, int num, int totalSize) {
+		int leftover = totalSize;
+		int unspecified = 0;
+		for(int i=0; i<num; i++) {
+			GridMetrics.Element elem = elements[i];
+			//System.out.println("Elem "+elem.size);
+			leftover-= elem.size;
+			if (elem.fixedSize<=0 && elem.relativeSize<=0) unspecified++;
+		}
+		if (leftover<=0) return -leftover;
+		if (unspecified==0) return 0;
+		int leftoverPerElem = leftover / unspecified;
+		for(int i=0; i<num; i++) {
+			GridMetrics.Element elem = elements[i];
+			if (elem.fixedSize<=0 && elem.relativeSize<=0) elem.size += leftoverPerElem;
+		}
+		
+		return 0;
 	}
 }
