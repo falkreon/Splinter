@@ -103,10 +103,8 @@ public class GridMetrics {
 		if (index<original.length) return original;
 		int scaled = Math.max(index+1, original.length*2);
 		
-		@SuppressWarnings("unchecked")
-		T[] replacement = (T[]) new Object[scaled];
+		T[] replacement = Arrays.copyOf(original, scaled);
 		
-		System.arraycopy(original, 0, replacement, 0, Math.min(original.length, replacement.length));
 		return replacement;
 	}
 	
