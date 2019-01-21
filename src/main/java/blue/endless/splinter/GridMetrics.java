@@ -7,6 +7,7 @@ import java.util.function.Supplier;
  * Represents arbitrarted grid sizes based on constraints
  */
 public class GridMetrics {
+	LayoutContainerMetrics containerMetrics;
 	int width = 1;
 	int height = 1;
 	Element[] xMetrics = new Element[4];
@@ -71,17 +72,29 @@ public class GridMetrics {
 		return xMetrics;
 	}
 	
+	public void addContainerMetrics(LayoutContainerMetrics metrics) {
+		containerMetrics = metrics;
+	}
+	
 	/** Merges the given layoutMetrics with the existing ones */
 	public void addElementMetrics(LayoutElementMetrics metrics) {
-		if (metrics.cellX<0 || metrics.cellY<0) return;
-		ensureSpaceFor(metrics.cellX, metrics.cellY);
+		if (metrics.cellX<0 || metrics.cellY<0 || metrics.cellX>=width || metrics.cellY>=height) return;
 		
 		Element column = xMetrics[metrics.cellX];
-		column.fixedSize = Math.max(column.fixedSize, metrics.fixedMinX);
+		if (metrics.fixedMinX>0) {
+			int paddingLeft = containerMetrics.cellPadding; if (metrics.cellX>0) paddingLeft /= 2;
+			int paddingRight = containerMetrics.cellPadding; if (metrics.cellX<width-1) paddingRight /= 2;
+			
+			column.fixedSize = Math.max(column.fixedSize, metrics.fixedMinX + paddingLeft + paddingRight);
+		}
 		column.relativeSize = Math.max(column.relativeSize, metrics.relativeMinX);
 		
 		Element row = yMetrics[metrics.cellY];
-		row.fixedSize =  Math.max(row.fixedSize, metrics.fixedMinY);
+		if (metrics.fixedMinY>0) {
+			int paddingTop = containerMetrics.cellPadding; if (metrics.cellY>0) paddingTop /= 2;
+			int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY<height-1) paddingBottom /= 2;
+			row.fixedSize =  Math.max(row.fixedSize, metrics.fixedMinY + paddingTop + paddingBottom);
+		}
 		row.relativeSize = Math.max(row.relativeSize, metrics.relativeMinY);
 	}
 	

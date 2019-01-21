@@ -1,6 +1,5 @@
 package blue.endless.splinter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,17 +25,25 @@ public class Layout {
 		LayoutContainerMetrics containerMetrics = container.getLayoutContainerMetrics();
 		//int maxX = 0;
 		//int maxY = 0;
+		
 		for(LayoutElement elem : container.getLayoutChildren()) {
 			LayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
-			int minWidth = elem.getNaturalWidth();
-			if (minWidth>0) metrics.fixedMinX = Math.max(metrics.fixedMinX, minWidth);
-			int minHeight = elem.getNaturalHeight();
-			if (minHeight>0) metrics.fixedMinY = Math.max(metrics.fixedMinY, minHeight);
+			//int minWidth = elem.getNaturalWidth();
+			//if (minWidth>0) metrics.fixedMinX = Math.max(metrics.fixedMinX, minWidth);
+			//int minHeight = elem.getNaturalHeight();
+			//if (minHeight>0) metrics.fixedMinY = Math.max(metrics.fixedMinY, minHeight);
 			
 			elementData.put(elem, metrics);
+			gridMetrics.ensureSpaceFor(metrics.cellX, metrics.cellY);
+			//gridMetrics.addElementMetrics(metrics);
+		}
+		gridMetrics.addContainerMetrics(containerMetrics);
+		
+		//We need to know how big the grid is before we size the rows and columns, so we know where to allocate margins
+		for(LayoutElementMetrics metrics : elementData.values()) {
 			gridMetrics.addElementMetrics(metrics);
 		}
-
+		
 		Set<LayoutElement> removed = new HashSet<>();
 		
 		/*
