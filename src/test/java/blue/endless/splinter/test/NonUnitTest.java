@@ -8,15 +8,39 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import blue.endless.splinter.Alignment;
+import blue.endless.splinter.GrowType;
 import blue.endless.splinter.Layout;
 
 public class NonUnitTest {
 	
 	public static void main(String... args) {
 		final Rectangle rootPanel = new Rectangle();
+		rootPanel.getLayoutContainerMetrics().setCellPadding(4);
 		rootPanel.backgroundColor = Color.RED;
 		rootPanel.borderColor = Color.RED;
 		
+		
+		Rectangle logoContainer = new Rectangle();
+		rootPanel.add(logoContainer, 0, 0);
+		rootPanel.getMetrics(logoContainer).setMinimumHeight(64);
+		rootPanel.getMetrics(logoContainer).setMinimumWidth(64);
+		rootPanel.getMetrics(logoContainer).horizontalGrowType = GrowType.PACK;
+		rootPanel.getMetrics(logoContainer).horizontalAlignment = Alignment.CENTER;
+		
+		Rectangle spacer = new Rectangle();
+		spacer.borderColor = new Color(0,0,0,0);
+		spacer.backgroundColor = new Color(0,0,0,0);
+		rootPanel.add(spacer, 0, 1);
+		
+		for(int i=0; i<4; i++) {
+			Rectangle rect = new Rectangle();
+			rect.borderColor = Color.BLUE;
+			rect.backgroundColor = Color.DARK_GRAY;
+			rootPanel.add(rect, 0, 2+i);
+			rootPanel.getMetrics(rect).setMinimumHeight(128);
+		}
+		/*
 		Rectangle test1 = new Rectangle();
 		test1.backgroundColor = Color.DARK_GRAY;
 		test1.borderColor = Color.RED;
@@ -48,7 +72,9 @@ public class NonUnitTest {
 		test3.backgroundColor = Color.DARK_GRAY;
 		test3.borderColor = Color.BLUE;
 		rootPanel.add(test3, 0,2);
-		//rootPanel.getMetrics(test3).setMinPercentHeight(50);
+		//rootPanel.getMetrics(test3).setMinPercentHeight(50);*/
+		
+		
 		
 		
 		@SuppressWarnings("serial")

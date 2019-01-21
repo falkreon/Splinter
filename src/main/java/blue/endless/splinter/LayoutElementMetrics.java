@@ -18,6 +18,12 @@ public class LayoutElementMetrics {
 	public int paddingRight  = 0;
 	public int paddingBottom = 0;
 	
+	public GrowType horizontalGrowType = GrowType.FILL;
+	public GrowType verticalGrowType = GrowType.FILL;
+	
+	public Alignment horizontalAlignment = Alignment.CENTER;
+	public Alignment verticalAlignment = Alignment.CENTER;
+	
 	/** A number of canvas pixels wide that the child component is not allowed to shrink below. */
 	public int fixedMinX = -1;
 	/** A percentage of *total parent width* that the child component is not allowed to shrink below. */

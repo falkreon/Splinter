@@ -23,7 +23,7 @@ public class Layout {
 		//Compile the LayoutData for this container
 		Map<LayoutElement, LayoutElementMetrics> elementData = new HashMap<>();
 		GridMetrics gridMetrics = new GridMetrics(); //TODO: Could we keep this as a static field, and clear and reuse this between layouts?
-		
+		LayoutContainerMetrics containerMetrics = container.getLayoutContainerMetrics();
 		//int maxX = 0;
 		//int maxY = 0;
 		for(LayoutElement elem : container.getLayoutChildren()) {
@@ -67,8 +67,8 @@ public class Layout {
 		}*/
 		
 		//Set initial sizes
-		setInitial(gridMetrics.xMetrics, gridMetrics.width, width);
-		setInitial(gridMetrics.yMetrics, gridMetrics.height, height);
+		setInitial(gridMetrics.xMetrics, gridMetrics.width, width, containerMetrics);
+		setInitial(gridMetrics.yMetrics, gridMetrics.height, height, containerMetrics);
 		
 		/*
 		for(GridMetrics.Element elem : gridMetrics.xMetrics) {
@@ -103,42 +103,12 @@ public class Layout {
 			gridMetrics.yMetrics[i].size += leftoverPerRow;
 		}
 		
-		/*
-		//Sum up the columns and figure out how much we're over or under by, then distribute the overage/shortfall
-		//evenly between the columns
-		int leftoverX = width;
-		for(int i=0; i<columnSize.size(); i++) {
-			leftoverX -= columnSize.get(i);
-		}
-		int leftoverPerColumn = leftoverX / gridWidth;
-		for(int i=0; i<columnSize.size(); i++) {
-			columnSize.set(i, columnSize.get(i) + leftoverPerColumn);
-		}
-		
-		int leftoverY = height;
-		for(int i=0; i<rowSize.size(); i++) {
-			leftoverY -= rowSize.get(i);
-		}
-		int leftoverPerRow = leftoverY / gridHeight;
-		for(int i=0; i<rowSize.size(); i++) {
-			rowSize.set(i, rowSize.get(i) + leftoverPerRow);
-		}
-		
-		//Set the actual row/column start positions now that we know their sizes
-		int curX = 0;
-		for(int i=0; i<gridWidth; i++) {
-			columnStart.set(i, curX);
-			curX += columnSize.get(i);
-		}
-		
-		int curY = 0;
-		for(int i=0; i<gridHeight; i++) {
-			rowStart.set(i, curY);
-			curY += rowSize.get(i);
-		}*/
 		
 		gridMetrics.recalcStarts();
 		
+		stretchEnd(gridMetrics.xMetrics, gridMetrics.width, width);
+		stretchEnd(gridMetrics.yMetrics, gridMetrics.height, height);
+		/*
 		//If there's any shortfall left, add it to the last row or column.
 		GridMetrics.Element rightmost = gridMetrics.getColumns()[gridMetrics.getWidth()-1];
 		if (rightmost.location+rightmost.size < width) {
@@ -148,10 +118,10 @@ public class Layout {
 		GridMetrics.Element bottommost = gridMetrics.getRows()[gridMetrics.getHeight()-1];
 		if (bottommost.location+bottommost.size < height) {
 			bottommost.size = (height)-bottommost.location;
-		}
+		}*/
 		
-		//container.setGridMetrics(rowStart, rowSize, columnStart, columnSize);
-		//if (gridMetrics.height==3) System.out.println(gridMetrics);
+		container.setGridMetrics(gridMetrics);
+		//if (gridMetrics.height>3) System.out.println(gridMetrics);
 		
 		//Notify container of each component's geometry
 		for(Map.Entry<LayoutElement, LayoutElementMetrics> entry : elementData.entrySet()) {
@@ -161,20 +131,74 @@ public class Layout {
 				//TODO: Do we want these values onscreen? Do we want to notify a component explicitly that layout has elected to zero it and hide it?
 				removed.add(elem);
 			} else {
-				/*
-				int cellX = columnStart.get(metrics.cellX);
-				int cellY = rowStart.get(metrics.cellY);
-				int cellWidth = columnSize.get(metrics.cellX);
-				int cellHeight = rowSize.get(metrics.cellY);*/
-				//TODO: This merely defines the available space within which the component may be placed. Here, maximum values can be considered and the element can be aligned against its cell.
-				int cellX = gridMetrics.getCellLeft(metrics.cellX);
-				int cellY = gridMetrics.getCellTop(metrics.cellY);
+				//This merely defines the available space within which the component may be placed. Here, maximum values can be considered and the element can be aligned against its cell.
+				int cellX = x + gridMetrics.getCellLeft(metrics.cellX);
+				int cellY = y + gridMetrics.getCellTop(metrics.cellY);
 				int cellWidth = gridMetrics.getCellWidth(metrics.cellX);
 				int cellHeight = gridMetrics.getCellHeight(metrics.cellY);
 				
-				container.setLayoutValues(elem, cellX, cellY, cellWidth, cellHeight);
+				/* TODO: This padding is imperfect, and assumes prior/next element padding is the same as this cell
+				 * Basically, we want to collapse the padding of this element relative to neighboring ones, and this method is an extremely
+				 * naive implementation, halving the padding if we're not on the outer edges.
+				 */
+				int paddingLeft = Math.max(metrics.paddingLeft, containerMetrics.cellPadding); if (metrics.cellX>0) paddingLeft /= 2;
+				int paddingTop = Math.max(metrics.paddingTop, containerMetrics.cellPadding); if (metrics.cellY>0) paddingTop /= 2;
+				int paddingRight = Math.max(metrics.paddingRight, containerMetrics.cellPadding); if (metrics.cellX<gridMetrics.width-1) paddingRight /= 2;
+				int paddingBottom = Math.max(metrics.paddingBottom, containerMetrics.cellPadding); if (metrics.cellY<gridMetrics.height-1) paddingBottom /= 2;
+				
+				//These ones are actually the maximum-sized element within the cell
+				int elemX = cellX + paddingLeft;
+				int elemY = cellY + paddingTop;
+				int elemWidth = cellWidth - (paddingLeft+paddingRight);
+				int elemHeight = cellHeight - (paddingTop+paddingBottom);
+				
+				if (metrics.horizontalGrowType==GrowType.PACK) {
+					int preferredWidth = Math.max(metrics.fixedMinX, (int)((metrics.relativeMinX/100.0)*width));
+					if (preferredWidth<elemWidth) {
+						elemWidth = preferredWidth;
+						switch (metrics.horizontalAlignment) {
+						case CENTER: {
+							int offset = (cellWidth/2) - (preferredWidth/2);
+							elemX += offset;
+							break;
+						}
+						case TRAILING: {
+							int offset = (cellWidth-(paddingLeft+paddingRight)) - preferredWidth;
+							elemX += offset;
+							break;
+						}
+						case LEADING:
+						default: //Do nothing
+							break;
+						}
+					}
+				}
+				
+				if (metrics.verticalGrowType==GrowType.PACK) {
+					int preferredHeight = Math.max(metrics.fixedMinY, (int)((metrics.relativeMinY/100.0)*height));
+					if (preferredHeight<elemHeight) {
+						elemHeight = preferredHeight;
+						switch (metrics.verticalAlignment) {
+						case CENTER: {
+							int offset = (cellHeight/2) - (preferredHeight/2);
+							elemY += offset;
+							break;
+						}
+						case TRAILING: {
+							int offset = (cellHeight-(paddingTop+paddingBottom)) - preferredHeight;
+							elemY += offset;
+							break;
+						}
+						case LEADING:
+						default: //Do nothing
+							break;
+						}
+					}
+				}
+				
+				container.setLayoutValues(elem, elemX, elemY, elemWidth, elemHeight);
 				if (elem instanceof LayoutContainer) {
-					layout((LayoutContainer)elem, cellX, cellY, cellWidth, cellHeight, removeCollisions);
+					layout((LayoutContainer)elem, elemX, elemY, elemWidth, elemHeight, removeCollisions);
 				}
 			}
 		}
@@ -185,11 +209,13 @@ public class Layout {
 		}
 	}
 	
-	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize) {
+	
+	
+	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize, LayoutContainerMetrics containerMetrics) {
 		for(int i=0; i<num; i++) {
 			GridMetrics.Element elem = elements[i];
 			
-			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*totalSize));
+			elem.size = Math.max(elem.fixedSize+(containerMetrics.cellPadding*2), (int)((elem.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2));
 		}
 	}
 	
@@ -211,5 +237,12 @@ public class Layout {
 		}
 		
 		return 0;
+	}
+	
+	private static void stretchEnd(GridMetrics.Element[] elements, int num, int totalSize) {
+		GridMetrics.Element rightmost = elements[num-1];
+		if (rightmost.location+rightmost.size < totalSize) {
+			rightmost.size = (totalSize)-rightmost.location;
+		}
 	}
 }

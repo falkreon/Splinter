@@ -18,7 +18,7 @@ public interface LayoutContainer {
 	 *                 grid borders fall on the line between two canvas pixels!
 	 * @param columnSizes The calculated width of each grid column.
 	 */
-	default void setGridMetrics(Collection<Integer> rowPositions, Collection<Integer> rowSizes, Collection<Integer> columnPositions, Collection<Integer> columnSizes) {}
+	default void setGridMetrics(GridMetrics metrics) {}
 	
 	/**
 	 * Sets layout values on this component to ones decided by the layout system.
