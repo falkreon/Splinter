@@ -39,6 +39,12 @@ public class NonUnitTest {
 			rect.backgroundColor = Color.DARK_GRAY;
 			rootPanel.add(rect, 0, 2+i);
 			rootPanel.getMetrics(rect).setMinimumHeight(128);
+			if (i==3) {
+				rootPanel.getMetrics(rect).fixedMinX = 256;
+				rootPanel.getMetrics(rect).horizontalGrowType = GrowType.PACK;
+				rootPanel.getMetrics(rect).horizontalAlignment = Alignment.LEADING;
+				rootPanel.getMetrics(rect).paddingLeft = 128;
+			}
 		}
 		/*
 		Rectangle test1 = new Rectangle();

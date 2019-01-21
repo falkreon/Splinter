@@ -137,14 +137,22 @@ public class Layout {
 				int cellWidth = gridMetrics.getCellWidth(metrics.cellX);
 				int cellHeight = gridMetrics.getCellHeight(metrics.cellY);
 				
-				/* TODO: This padding is imperfect, and assumes prior/next element padding is the same as this cell
-				 * Basically, we want to collapse the padding of this element relative to neighboring ones, and this method is an extremely
-				 * naive implementation, halving the padding if we're not on the outer edges.
-				 */
-				int paddingLeft = Math.max(metrics.paddingLeft, containerMetrics.cellPadding); if (metrics.cellX>0) paddingLeft /= 2;
-				int paddingTop = Math.max(metrics.paddingTop, containerMetrics.cellPadding); if (metrics.cellY>0) paddingTop /= 2;
-				int paddingRight = Math.max(metrics.paddingRight, containerMetrics.cellPadding); if (metrics.cellX<gridMetrics.width-1) paddingRight /= 2;
-				int paddingBottom = Math.max(metrics.paddingBottom, containerMetrics.cellPadding); if (metrics.cellY<gridMetrics.height-1) paddingBottom /= 2;
+				int paddingLeft = containerMetrics.cellPadding; if (metrics.cellX>0) paddingLeft /= 2;
+				int paddingTop = containerMetrics.cellPadding; if (metrics.cellY>0) paddingTop /= 2;
+				int paddingRight = containerMetrics.cellPadding; if (metrics.cellX<gridMetrics.width-1) paddingRight /= 2;
+				int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY<gridMetrics.height-1) paddingBottom /= 2;
+				
+				if (containerMetrics.collapseMargins) {
+					paddingLeft = Math.max(metrics.paddingLeft, paddingLeft);
+					paddingTop = Math.max(metrics.paddingTop, paddingTop);
+					paddingRight = Math.max(metrics.paddingRight, paddingRight);
+					paddingBottom = Math.max(metrics.paddingBottom, paddingBottom);
+				} else {
+					paddingLeft += metrics.paddingLeft;
+					paddingTop += metrics.paddingTop;
+					paddingRight += metrics.paddingRight;
+					paddingBottom += metrics.paddingBottom;
+				}
 				
 				//These ones are actually the maximum-sized element within the cell
 				int elemX = cellX + paddingLeft;
