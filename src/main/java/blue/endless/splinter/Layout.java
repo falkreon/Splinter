@@ -1,5 +1,6 @@
 package blue.endless.splinter;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,19 +24,11 @@ public class Layout {
 		Map<LayoutElement, LayoutElementMetrics> elementData = new HashMap<>();
 		GridMetrics gridMetrics = new GridMetrics(); //TODO: Could we keep this as a static field, and clear and reuse this between layouts?
 		LayoutContainerMetrics containerMetrics = container.getLayoutContainerMetrics();
-		//int maxX = 0;
-		//int maxY = 0;
 		
 		for(LayoutElement elem : container.getLayoutChildren()) {
 			LayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
-			//int minWidth = elem.getNaturalWidth();
-			//if (minWidth>0) metrics.fixedMinX = Math.max(metrics.fixedMinX, minWidth);
-			//int minHeight = elem.getNaturalHeight();
-			//if (minHeight>0) metrics.fixedMinY = Math.max(metrics.fixedMinY, minHeight);
-			
 			elementData.put(elem, metrics);
 			gridMetrics.ensureSpaceFor(metrics.cellX, metrics.cellY);
-			//gridMetrics.addElementMetrics(metrics);
 		}
 		gridMetrics.addContainerMetrics(containerMetrics);
 		
@@ -77,14 +70,9 @@ public class Layout {
 		setInitial(gridMetrics.xMetrics, gridMetrics.width, width, containerMetrics);
 		setInitial(gridMetrics.yMetrics, gridMetrics.height, height, containerMetrics);
 		
-		/*
-		for(GridMetrics.Element elem : gridMetrics.xMetrics) {
-			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*width));
-		}
-		
-		for(GridMetrics.Element elem : gridMetrics.yMetrics) {
-			elem.size = Math.max(elem.fixedSize, (int)((elem.relativeSize/100.0)*height));
-		}*/
+		//Stretch multi-column/multi-row constraints
+		stretchConstraints(gridMetrics.xMetrics, gridMetrics.xConstraints, width, containerMetrics);
+		stretchConstraints(gridMetrics.yMetrics, gridMetrics.yConstraints, height, containerMetrics);
 		
 		//Preferentially grow elements that don't have a specific size declared
 		stretchUnspecified(gridMetrics.xMetrics, gridMetrics.width, width);
@@ -141,13 +129,21 @@ public class Layout {
 				//This merely defines the available space within which the component may be placed. Here, maximum values can be considered and the element can be aligned against its cell.
 				int cellX = x + gridMetrics.getCellLeft(metrics.cellX);
 				int cellY = y + gridMetrics.getCellTop(metrics.cellY);
-				int cellWidth = gridMetrics.getCellWidth(metrics.cellX);
-				int cellHeight = gridMetrics.getCellHeight(metrics.cellY);
+				int cellWidth = 0;
+				int cellHeight = 0;
+				
+				int lastCellXIndex = metrics.cellX + (metrics.cellsX-1);
+				int lastCellXEnd = gridMetrics.getCellLeft(lastCellXIndex) + gridMetrics.getCellWidth(lastCellXIndex);
+				cellWidth = lastCellXEnd - cellX;
+				
+				int lastCellYIndex = metrics.cellY + (metrics.cellsY-1);
+				int lastCellYEnd = gridMetrics.getCellTop(lastCellYIndex) + gridMetrics.getCellHeight(lastCellYIndex);
+				cellHeight = lastCellYEnd - cellY;
 				
 				int paddingLeft = containerMetrics.cellPadding; if (metrics.cellX>0) paddingLeft /= 2;
 				int paddingTop = containerMetrics.cellPadding; if (metrics.cellY>0) paddingTop /= 2;
-				int paddingRight = containerMetrics.cellPadding; if (metrics.cellX<gridMetrics.width-1) paddingRight /= 2;
-				int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY<gridMetrics.height-1) paddingBottom /= 2;
+				int paddingRight = containerMetrics.cellPadding; if (metrics.cellX+(metrics.cellsX-1)<gridMetrics.width-1) paddingRight /= 2;
+				int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY+(metrics.cellsY-1)<gridMetrics.height-1) paddingBottom /= 2;
 				
 				if (containerMetrics.collapseMargins) {
 					paddingLeft = Math.max(metrics.paddingLeft, paddingLeft);
@@ -229,8 +225,39 @@ public class Layout {
 	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize, LayoutContainerMetrics containerMetrics) {
 		for(int i=0; i<num; i++) {
 			GridMetrics.Element elem = elements[i];
-			
-			elem.size = Math.max(elem.fixedSize+(containerMetrics.cellPadding*2), (int)((elem.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2));
+			int resolvedFixed = (elem.fixedSize>0) ? elem.fixedSize+(containerMetrics.cellPadding*2) : 0;
+			int resolvedRelative = (elem.relativeSize>0) ? (int)((elem.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2) : 0;
+			elem.size = Math.max(resolvedFixed, resolvedRelative);
+		}
+	}
+	
+	private static void stretchConstraints(GridMetrics.Element[] elements, Collection<GridMetrics.Constraint> constraints, int totalSize, LayoutContainerMetrics containerMetrics) {
+		for(GridMetrics.Constraint constraint : constraints) {
+			stretchConstraint(elements, constraint, totalSize, containerMetrics);
+		}
+	}
+	
+	private static void stretchConstraint(GridMetrics.Element[] elements, GridMetrics.Constraint constraint, int totalSize, LayoutContainerMetrics containerMetrics) {
+		if (constraint.index+(constraint.span-1)>=elements.length) return; //This constraint doesn't...fit.
+		
+		int resolvedFixed = (constraint.fixedSize>0) ? constraint.fixedSize+(containerMetrics.cellPadding*2) : 0;
+		int resolvedRelative = (constraint.relativeSize>0) ? (int)((constraint.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2) : 0;
+		int resolved = Math.max(resolvedFixed, resolvedRelative);
+		if (resolved==0) return; //shouldn't happen
+		
+		int existingSize = 0;
+		for(int i=0; i<constraint.span; i++) {
+			GridMetrics.Element element = elements[constraint.index+i];
+			existingSize += element.size;
+		}
+		
+		int leftover = resolved - existingSize;
+		
+		if (leftover<=0) return;
+		int leftoverPerElem = leftover / constraint.span;
+		for(int i=0; i<constraint.span; i++) {
+			GridMetrics.Element element = elements[constraint.index+i];
+			element.size += leftoverPerElem;
 		}
 	}
 	
@@ -241,14 +268,14 @@ public class Layout {
 			GridMetrics.Element elem = elements[i];
 			//System.out.println("Elem "+elem.size);
 			leftover-= elem.size;
-			if (elem.fixedSize<=0 && elem.relativeSize<=0) unspecified++;
+			if ( !elem.multiColumnApplied && elem.fixedSize<=0 && elem.relativeSize<=0 ) unspecified++;
 		}
 		if (leftover<=0) return -leftover;
 		if (unspecified==0) return 0;
 		int leftoverPerElem = leftover / unspecified;
 		for(int i=0; i<num; i++) {
 			GridMetrics.Element elem = elements[i];
-			if (elem.fixedSize<=0 && elem.relativeSize<=0) elem.size += leftoverPerElem;
+			if ( !elem.multiColumnApplied && elem.fixedSize<=0 && elem.relativeSize<=0 ) elem.size += leftoverPerElem;
 		}
 		
 		return 0;

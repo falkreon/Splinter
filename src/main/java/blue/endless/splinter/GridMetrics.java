@@ -1,6 +1,8 @@
 package blue.endless.splinter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -12,6 +14,8 @@ public class GridMetrics {
 	int height = 1;
 	Element[] xMetrics = new Element[4];
 	Element[] yMetrics = new Element[4];
+	List<Constraint> xConstraints = new ArrayList<>();
+	List<Constraint> yConstraints = new ArrayList<>();
 	
 	public GridMetrics() {
 		fillEmpties(xMetrics, Element::new);
@@ -78,24 +82,54 @@ public class GridMetrics {
 	
 	/** Merges the given layoutMetrics with the existing ones */
 	public void addElementMetrics(LayoutElementMetrics metrics) {
-		if (metrics.cellX<0 || metrics.cellY<0 || metrics.cellX>=width || metrics.cellY>=height) return;
+		if (metrics.cellX<0 || metrics.cellY<0 || metrics.cellX+(metrics.cellsX-1)>=width || metrics.cellY+(metrics.cellsY-1)>=height) return;
 		
-		Element column = xMetrics[metrics.cellX];
-		if (metrics.fixedMinX>0) {
-			int paddingLeft = containerMetrics.cellPadding; if (metrics.cellX>0) paddingLeft /= 2;
-			int paddingRight = containerMetrics.cellPadding; if (metrics.cellX<width-1) paddingRight /= 2;
-			
-			column.fixedSize = Math.max(column.fixedSize, metrics.fixedMinX + paddingLeft + paddingRight);
+		if (metrics.cellsX>1) {
+			if (metrics.relativeMinX>0 || metrics.fixedMinX>0) {
+				Constraint constraint = new Constraint();
+				constraint.fixedSize = metrics.fixedMinX;
+				constraint.relativeSize = metrics.relativeMinX;
+				constraint.index = metrics.cellX;
+				constraint.span = metrics.cellsX;
+				xConstraints.add(constraint);
+				
+				for(int i=0; i<metrics.cellsX; i++) {
+					Element elem = xMetrics[metrics.cellX+i];
+					elem.multiColumnApplied = true;
+				}
+			}
+		} else {
+			Element column = xMetrics[metrics.cellX];
+			addElementMetrics(containerMetrics, column, metrics.cellX, metrics.fixedMinX, metrics.relativeMinX);
 		}
-		column.relativeSize = Math.max(column.relativeSize, metrics.relativeMinX);
 		
-		Element row = yMetrics[metrics.cellY];
-		if (metrics.fixedMinY>0) {
-			int paddingTop = containerMetrics.cellPadding; if (metrics.cellY>0) paddingTop /= 2;
-			int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY<height-1) paddingBottom /= 2;
-			row.fixedSize =  Math.max(row.fixedSize, metrics.fixedMinY + paddingTop + paddingBottom);
+		if (metrics.cellsY>1) {
+			if (metrics.relativeMinY>0 || metrics.fixedMinY>0) {
+				Constraint constraint = new Constraint();
+				constraint.fixedSize = metrics.fixedMinY;
+				constraint.relativeSize = metrics.relativeMinY;
+				constraint.index = metrics.cellY;
+				constraint.span = metrics.cellsY;
+				yConstraints.add(constraint);
+				
+				for(int i=0; i<metrics.cellsY; i++) {
+					Element elem = yMetrics[metrics.cellY+i];
+					elem.multiColumnApplied = true;
+				}
+			}
+		} else {
+			Element row = yMetrics[metrics.cellY];
+			addElementMetrics(containerMetrics, row, metrics.cellY, metrics.fixedMinY, metrics.relativeMinY);
 		}
-		row.relativeSize = Math.max(row.relativeSize, metrics.relativeMinY);
+	}
+	
+	protected void addElementMetrics(LayoutContainerMetrics containerMetrics, Element existing, int index, int fixed, int relative) {
+		int paddingLeading = containerMetrics.cellPadding; if (index>0) paddingLeading /= 2;
+		int paddingTrailing = containerMetrics.cellPadding; if (index<width-1) paddingTrailing /= 2;
+		if (fixed>0) {
+			existing.fixedSize = Math.max(existing.fixedSize, fixed+paddingLeading+paddingTrailing);
+		}
+		existing.relativeSize = Math.max(existing.relativeSize, relative);
 	}
 	
 	protected void recalcStarts() {
@@ -143,6 +177,7 @@ public class GridMetrics {
 	public static class Element {
 		int fixedSize = 0;
 		int relativeSize = 0;
+		boolean multiColumnApplied = false;
 		
 		int location = 0;
 		int size = 0;
@@ -151,5 +186,15 @@ public class GridMetrics {
 		public String toString() {
 			return "{ fixedSize: "+fixedSize+", relativeSize: "+relativeSize+", location: "+location+", size: "+size+" }";
 		}
+	}
+	
+	public static class Constraint {
+		/** Row or column index this grid constraint's leading edge is attached to */
+		int index = 0;
+		/** How many rows or columns this grid constraint reaches across */
+		int span = 1;
+		
+		int fixedSize = 0;
+		int relativeSize = 0;
 	}
 }

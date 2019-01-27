@@ -15,6 +15,7 @@ import blue.endless.splinter.Layout;
 public class NonUnitTest {
 	
 	public static void main(String... args) {
+		/*//Test resembling Chipper main menu
 		final Rectangle rootPanel = new Rectangle();
 		rootPanel.getLayoutContainerMetrics().setCellPadding(4);
 		rootPanel.backgroundColor = Color.RED;
@@ -45,41 +46,26 @@ public class NonUnitTest {
 				rootPanel.getMetrics(rect).horizontalAlignment = Alignment.LEADING;
 				rootPanel.getMetrics(rect).paddingLeft = 128;
 			}
-		}
-		/*
+		}*/
+		
+		
+		final Rectangle rootPanel = new Rectangle();
+		rootPanel.getLayoutContainerMetrics().setCellPadding(16);
+		rootPanel.backgroundColor = new Color(0,0,0,0);
+		rootPanel.borderColor = new Color(0,0,0,0);
+		
 		Rectangle test1 = new Rectangle();
-		test1.backgroundColor = Color.DARK_GRAY;
-		test1.borderColor = Color.RED;
 		rootPanel.add(test1, 0, 0);
-		rootPanel.getMetrics(test1).setMinimumHeight(100);
-		
-		Rectangle a1 = new Rectangle();
-		a1.borderColor = new Color(0,0,0,0);
-		a1.backgroundColor = new Color(0,0,0,0);
-		test1.add(a1, 0, 0);
-		
-		Rectangle a2 = new Rectangle();
-		a2.borderColor = Color.CYAN;
-		a2.backgroundColor = Color.BLACK;
-		test1.add(a2, 1, 0);
-		
-		Rectangle a3 = new Rectangle();
-		a3.borderColor = new Color(0,0,0,0);
-		a3.backgroundColor = new Color(0,0,0,0);
-		test1.add(a3, 2, 0);
+		//rootPanel.getMetrics(test1).setMinPercentHeight(25);
 		
 		Rectangle test2 = new Rectangle();
-		test2.backgroundColor = Color.DARK_GRAY;
-		test2.borderColor = Color.GREEN;
 		rootPanel.add(test2, 0, 1);
-		rootPanel.getMetrics(test2).setMinimumHeight(100);
+		rootPanel.getMetrics(test2).cellsY = 2;
+		rootPanel.getMetrics(test2).relativeMinY = 25;
 		
 		Rectangle test3 = new Rectangle();
-		test3.backgroundColor = Color.DARK_GRAY;
-		test3.borderColor = Color.BLUE;
-		rootPanel.add(test3, 0,2);
-		//rootPanel.getMetrics(test3).setMinPercentHeight(50);*/
-		
+		rootPanel.add(test3, 1, 2);
+		rootPanel.getMetrics(test3).cellsY =1;
 		
 		
 		
