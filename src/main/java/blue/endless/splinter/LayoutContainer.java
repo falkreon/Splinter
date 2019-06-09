@@ -24,8 +24,6 @@
 
 package blue.endless.splinter;
 
-import java.util.Collection;
-
 public interface LayoutContainer {
 	public Iterable<? extends LayoutElement> getLayoutChildren();
 	public LayoutElementMetrics getLayoutElementMetrics(LayoutElement elem);
@@ -37,10 +35,7 @@ public interface LayoutContainer {
 	
 	/** Notifies the host container of grid metrics, in case it can draw visible gridlines or boxes.
 	 * 
-	 * @param rowSizes The calculated height of each grid row. Grid row 0 occupies from Y coordinate 0 to rowHeights[0]-1,
-	 *                 while grid row 1 occupes rowHeights[0] to rowHeights[0]+rowHeights[1]-1. In other words,
-	 *                 grid borders fall on the line between two canvas pixels!
-	 * @param columnSizes The calculated width of each grid column.
+	 * @param metrics the locations and spacings of cells that were assigned to this container
 	 */
 	default void setGridMetrics(GridMetrics metrics) {}
 	
