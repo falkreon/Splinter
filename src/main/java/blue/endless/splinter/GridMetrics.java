@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Falkreon (Isaac Ellingson)
+ * Copyright (c) 2019-2023 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -105,7 +105,7 @@ public class GridMetrics {
 	}
 	
 	/** Merges the given layoutMetrics with the existing ones */
-	public void addElementMetrics(LayoutElementMetrics metrics) {
+	public void addElementMetrics(OldLayoutElementMetrics metrics) {
 		if (metrics.cellX<0 || metrics.cellY<0 || metrics.cellX+(metrics.cellsX-1)>=width || metrics.cellY+(metrics.cellsY-1)>=height) return;
 		
 		if (metrics.cellsX>1) {

@@ -22,19 +22,10 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.test;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
+import java.awt.Graphics;
 
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
-	}
-	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
-	}
+public interface Paintable {
+	public void paint(Graphics g);
 }

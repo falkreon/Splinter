@@ -22,19 +22,14 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.data;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
-
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
-	}
-	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
-	}
+/**
+ * Represents some spacing affecting both the leading and trailing edge of a box along one dimension, such as a margin,
+ * border, padding, or cell-padding.
+ */
+public record Spacing(Size leading, Size trailing) {
+	public static final Spacing NONE = new Spacing(Size.pixels(0), Size.pixels(0));
+	public static final Spacing DEFAULT_MARGIN = new Spacing(Size.pixels(4), Size.pixels(4));
+	public static final Spacing DEFAULT_PADDING = new Spacing(Size.pixels(8), Size.pixels(8));
 }

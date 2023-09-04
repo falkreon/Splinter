@@ -22,19 +22,20 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.data;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
-
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
-	}
+public enum Axis {
+	/**
+	 * The X axis - elements are laid out from left to right.
+	 */
+	HORIZONTAL,
 	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
+	/**
+	 * The Y axis - elements are laid out from top to bottom.
+	 */
+	VERTICAL;
+	
+	public int choose(int x, int y) {
+		return (this == HORIZONTAL) ? x : y;
 	}
 }

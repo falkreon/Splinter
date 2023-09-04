@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Falkreon (Isaac Ellingson)
+ * Copyright (c) 2019-2023 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import blue.endless.splinter.data.GrowType;
+
 public class Layout {
 	/**
 	 * Sets layout parameters for each component and notifies the container of its arbitrated geometry. The container and its
@@ -45,19 +47,19 @@ public class Layout {
 	 */
 	public static void layout(LayoutContainer container, int x, int y, int width, int height, boolean removeCollisions) {
 		//Compile the LayoutData for this container
-		Map<LayoutElement, LayoutElementMetrics> elementData = new HashMap<>();
+		Map<LayoutElement, OldLayoutElementMetrics> elementData = new HashMap<>();
 		GridMetrics gridMetrics = new GridMetrics(); //TODO: Could we keep this as a static field, and clear and reuse this between layouts?
 		LayoutContainerMetrics containerMetrics = container.getLayoutContainerMetrics();
 		
 		for(LayoutElement elem : container.getLayoutChildren()) {
-			LayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
+			OldLayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
 			elementData.put(elem, metrics);
 			gridMetrics.ensureSpaceFor(metrics.cellX, metrics.cellY);
 		}
 		gridMetrics.addContainerMetrics(containerMetrics);
 		
 		//We need to know how big the grid is before we size the rows and columns, so we know where to allocate margins
-		for(LayoutElementMetrics metrics : elementData.values()) {
+		for(OldLayoutElementMetrics metrics : elementData.values()) {
 			gridMetrics.addElementMetrics(metrics);
 		}
 		
@@ -143,9 +145,9 @@ public class Layout {
 		//if (gridMetrics.height>3) System.out.println(gridMetrics);
 		
 		//Notify container of each component's geometry
-		for(Map.Entry<LayoutElement, LayoutElementMetrics> entry : elementData.entrySet()) {
+		for(Map.Entry<LayoutElement, OldLayoutElementMetrics> entry : elementData.entrySet()) {
 			LayoutElement elem = entry.getKey();
-			LayoutElementMetrics metrics = entry.getValue();
+			OldLayoutElementMetrics metrics = entry.getValue();
 			if (metrics.cellX<0 || metrics.cellY<0) {
 				//TODO: Do we want these values onscreen? Do we want to notify a component explicitly that layout has elected to zero it and hide it?
 				removed.add(elem);
@@ -243,8 +245,6 @@ public class Layout {
 			container.setLayoutValues(elem, 0, 0, 0, 0);
 		}
 	}
-	
-	
 	
 	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize, LayoutContainerMetrics containerMetrics) {
 		for(int i=0; i<num; i++) {

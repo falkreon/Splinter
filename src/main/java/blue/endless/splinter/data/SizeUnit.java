@@ -22,19 +22,24 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.data;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
+import blue.endless.splinter.Measurer;
 
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
-	}
+public enum SizeUnit {
+	/** Relative unit. Converts to a pixel value based on the layout space available. */
+	PERCENT,
+	/** Absolute unit. All other units convert down to this in the end. */
+	PIXELS,
+	/** Absolute unit. Converts down to PIXELS based on the font metrics. */
+	POINTS,
+	/**
+	 * Absolute unit. Measures the width of the em-dash, which should be the same as the width of the capital letter
+	 * 'M'.
+	 */
+	EMS;
 	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
+	public <T> void convert(Measurer<T> measurer) {
+		
 	}
 }

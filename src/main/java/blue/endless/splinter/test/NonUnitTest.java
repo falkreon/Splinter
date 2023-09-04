@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Falkreon (Isaac Ellingson)
+ * Copyright (c) 2019-2023 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,9 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import blue.endless.splinter.Alignment;
-import blue.endless.splinter.GrowType;
 import blue.endless.splinter.Layout;
+import blue.endless.splinter.data.Alignment;
+import blue.endless.splinter.data.GrowType;
 
 public class NonUnitTest {
 	
@@ -100,16 +100,6 @@ public class NonUnitTest {
 				container.rootPanel = rootPanel;
 				this.setContentPane(container);
 			}
-			/*
-			public void paint(Graphics g) {
-				g.setColor(Color.WHITE);
-				g.fillRect(0, 0, this.getWidth(), this.getHeight());
-				
-				rootPanel.setOwnLayoutValues(10, 50, this.getWidth()-20, this.getHeight()-60); //Technically the root container need not be a Widget and could be 0x0; this should not affect Layout
-				Layout.layout(rootPanel, 0, 0, this.getWidth(), this.getHeight(), false);
-				
-				rootPanel.paint(g);
-			};*/
 		};
 		layoutHost.setMinimumSize(new Dimension(600, 600));
 		layoutHost.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

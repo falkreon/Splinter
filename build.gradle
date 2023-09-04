@@ -1,35 +1,30 @@
 buildscript {
 	repositories {
 		mavenCentral();
-		jcenter();
-		maven {
-			name = "sonatype";
-			url = "https://oss.sonatype.org/content/repositories/snapshots/";
-		}
-		maven {
-			url "https://plugins.gradle.org/m2/";
-		}
 	}
 	dependencies {
-		classpath "gradle.plugin.net.minecrell:licenser:0.3";
 	}
 }
 
-apply plugin: "java";
-apply plugin: "net.minecrell.licenser";
-apply plugin: "eclipse";
-apply plugin: "maven-publish";
-apply plugin: "signing";
+plugins {
+	id "java";
+	id 'org.cadixdev.licenser' version '0.6.1'
+}
 
 group = "blue.endless";
 archivesBaseName = "Splinter";
 version = "0.0.1";
 
-sourceCompatibility = 1.8;
-targetCompatibility = 1.8;
+sourceCompatibility = 1.17;
+targetCompatibility = 1.17;
 
 repositories {
 	mavenCentral()
+}
+
+compileJava {
+//	from sourceSets.main
+//	from sourceSets.test
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -42,90 +37,12 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 	from javadoc.destinationDir
 }
 
-def versionSuffix = 'SNAPSHOT'
-if (System.env.BUILD_NUMBER) {
-	versionSuffix = '-'+System.env.BUILD_NUMBER;
-}
-
-publishing {
-	publications {
-		mavenPrimary(MavenPublication) {
-			from components.java;
-
-			groupId project.group;
-			artifactId "splinter";
-			version project.version+versionSuffix;
-			artifact sourcesJar;
-			artifact javadocJar;
-			
-			pom {
-				name = "Splinter";
-				description = "Grid-based layout engine for Java";
-				url = "https://github.com/falkreon/Splinter";
-				
-				developers {
-					developer {
-						id = "falkreon"
-						name = "Isaac Ellingson"
-						email = "falkreon@gmail.com"
-					}
-				}
-				
-				licenses {
-					license {
-						name = "MIT License"
-						url = "https://opensource.org/licenses/MIT"
-						distribution = "repo"
-					}
-				}
-				/*
-				scm {
-					url = "https://github.com/falkreon/Splinter"
-					connection = "scm:git:git@github.com:falkreon/Splinter.git"
-					developerConnection = "scm:git:git@github.com:falkreon/Splinter.git"
-				}*/
-			}
-		}
-	}
-	/* //Don't publish to OSSRH
-	repositories {
-		if (project.hasProperty("ossrhUsername")) {
-			maven {
-				def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-				def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-				url = snapshotsRepoUrl; //version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-				
-				credentials {
-					username = ossrhUsername
-					password = ossrhPassword
-				}
-				
-			}
-		}
-	}*/
-}
-
-if (file("private.gradle").exists()) {
-	apply from: "private.gradle";
-}
-
-defaultTasks "clean", "build", "sourcesJar";
-
-
-
-
 dependencies {
-	testCompile "junit:junit:4.12";
+	testImplementation "junit:junit:4.12";
 	
 	compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
 }
 
-signing {
-	if (project.hasProperty("signing.keyId")) {
-		println("Key credentials found. Enabling jar signing.");
-		sign configurations.archives;
-		sign publishing.publications.mavenPrimary
-	} else {
-		println("Skipping jar signing");
-	}
+license {
+	include "**/*.java"
 }

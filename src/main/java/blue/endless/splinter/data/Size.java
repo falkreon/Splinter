@@ -22,19 +22,22 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.data;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
-
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
+public record Size(int value, SizeUnit units) {
+	public static Size pixels(int value) {
+		return new Size(value, SizeUnit.PIXELS);
 	}
 	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
+	public static Size percent(int value) {
+		return new Size(value, SizeUnit.PERCENT);
+	}
+	
+	public static Size ems(int value) {
+		return new Size(value, SizeUnit.EMS);
+	}
+	
+	public static Size points(int value) {
+		return new Size(value, SizeUnit.POINTS);
 	}
 }

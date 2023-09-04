@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Falkreon (Isaac Ellingson)
+ * Copyright (c) 2019-2023 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,18 @@
 
 package blue.endless.splinter;
 
+import blue.endless.splinter.data.Axis;
+
 /**
- * Represents what happens to a LayoutElement's size when it's in a cell larger than itself.
- * Most like Swift "distribution", but also compare to android's "gravity" and swing's GridBagConstraints.fill
+ * Interface for the ability to measure something's size in pixels.
  */
-public enum GrowType {
-	/** The LayoutElement will grow no larger than its minimum size along this axis */
-	PACK,
-	/** The LayoutElement will grow to the largest size it can along this axis*/
-	FILL;
+public interface Measurer<T> {
+	
+	public int getWidth(T t);
+	
+	public int getHeight(T t);
+	
+	default int getSize(T t, Axis axis) {
+		return (axis == Axis.HORIZONTAL) ? getWidth(t) : getHeight(t);
+	}
 }

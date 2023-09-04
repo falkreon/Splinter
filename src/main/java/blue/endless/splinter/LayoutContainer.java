@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Falkreon (Isaac Ellingson)
+ * Copyright (c) 2019-2023 Falkreon (Isaac Ellingson)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ package blue.endless.splinter;
 
 public interface LayoutContainer {
 	public Iterable<? extends LayoutElement> getLayoutChildren();
-	public LayoutElementMetrics getLayoutElementMetrics(LayoutElement elem);
+	public OldLayoutElementMetrics getLayoutElementMetrics(LayoutElement elem);
 	
 	/**
 	 * Gets the layout-related settings for this container
@@ -47,4 +47,26 @@ public interface LayoutContainer {
 	 * @param height The component's new height
 	 */
 	void setLayoutValues(LayoutElement elem, int x, int y, int width, int height);
+	
+	/**
+	 * Used by the layout system to notify the LayoutContainer of the inflexible minimum width mandated by its children
+	 * @param value the natural width of the container
+	 */
+	void setNaturalWidth(int value);
+	
+	/**
+	 * Called by the layout system to notify the LayoutContainer of the inflexible minimum height mandated by its children
+	 * @param value the natural height of the container
+	 */
+	void setNaturalHeight(int value);
+	
+	/**
+	 * Gets the minimum width of this container mandated by the children. Layout sets this value via setNaturalWidth
+	 */
+	int getNaturalWidth();
+	
+	/**
+	 * Gets the minimum height of this container mandated by its children. Layout sets this value via setNaturalHeight
+	 */
+	int getNaturalHeight();
 }

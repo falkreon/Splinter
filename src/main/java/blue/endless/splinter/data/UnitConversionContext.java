@@ -22,19 +22,30 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.data;
 
-public class LayoutContainerMetrics {
-	protected int cellPadding;
-	protected boolean collapseMargins;
-
-	public LayoutContainerMetrics setCellPadding(int amount) {
-		this.cellPadding = amount;
-		return this;
-	}
-	
-	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
-		this.collapseMargins = collapseMargins;
-		return this;
+public record UnitConversionContext(double pixelsPerEm, double pixelsPerPoint, int sizeAvailable) {
+	public Size convert(Size size, SizeUnit targetUnit) {
+		//Convert size down to pixels
+		
+		double pixelValue = switch(size.units()) {
+			case PIXELS -> size.value();
+			case PERCENT -> (size.value() / 100.0) * sizeAvailable;
+			case EMS -> size.value() * pixelsPerEm;
+			case POINTS -> size.value() * pixelsPerPoint;
+		};
+		
+		//Convert pixelValue up to target
+		
+		double result = switch(targetUnit) {
+			case PIXELS -> pixelValue;
+			case PERCENT -> (pixelValue / sizeAvailable) * 100.0;
+			case EMS -> pixelValue / pixelsPerEm;
+			case POINTS -> pixelValue / pixelsPerPoint;
+		};
+		
+		//Round and package
+		
+		return new Size((int) result, targetUnit);
 	}
 }
