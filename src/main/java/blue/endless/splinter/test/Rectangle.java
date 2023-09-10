@@ -48,7 +48,7 @@ public class Rectangle extends ContainerWidget implements Paintable {
 			g.fillRect(x+width-(borderWidth), y+borderWidth, borderWidth, height-(borderWidth*2));
 		}
 		
-		for(Widget child : children.keySet()) {
+		for(Widget child : oldChildren.keySet()) {
 			if (child instanceof Paintable) {
 				((Paintable)child).paint(g);
 			}

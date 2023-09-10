@@ -25,11 +25,23 @@
 package blue.endless.splinter.data;
 
 /**
- * Represents some spacing affecting both the leading and trailing edge of a box along one dimension, such as a margin,
+ * Represents some spacing around each edge of a two-dimensional box, such as a margin,
  * border, padding, or cell-padding.
  */
-public record Spacing(Size leading, Size trailing) {
-	public static final Spacing NONE = new Spacing(Size.pixels(0), Size.pixels(0));
-	public static final Spacing DEFAULT_MARGIN = new Spacing(Size.pixels(4), Size.pixels(4));
-	public static final Spacing DEFAULT_PADDING = new Spacing(Size.pixels(8), Size.pixels(8));
+public record Spacing(Size top, Size right, Size bottom, Size left) {
+	public static final Spacing NONE = of(Size.pixels(0));
+	public static final Spacing DEFAULT_MARGIN = of(Size.pixels(4));
+	public static final Spacing DEFAULT_PADDING = of(Size.pixels(8));
+	
+	public Size leading(Axis axis) {
+		return (axis == Axis.HORIZONTAL) ? left : top;
+	}
+	
+	public Size trailing(Axis axis) {
+		return (axis == Axis.HORIZONTAL) ? right : bottom;
+	}
+	
+	public static Spacing of(Size s) {
+		return new Spacing(s, s, s, s);
+	}
 }

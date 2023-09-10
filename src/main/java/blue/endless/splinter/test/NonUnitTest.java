@@ -28,17 +28,17 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import blue.endless.splinter.Layout;
-import blue.endless.splinter.data.Alignment;
-import blue.endless.splinter.data.GrowType;
 
 public class NonUnitTest {
 	
-	public static void main(String... args) {
+public static void main(String... args) {
+		
 		/*//Test resembling Chipper main menu
 		final Rectangle rootPanel = new Rectangle();
 		rootPanel.getLayoutContainerMetrics().setCellPadding(4);
@@ -84,12 +84,12 @@ public class NonUnitTest {
 		
 		Rectangle test2 = new Rectangle();
 		rootPanel.add(test2, 0, 1);
-		rootPanel.getMetrics(test2).cellsY = 2;
-		rootPanel.getMetrics(test2).relativeMinY = 25;
+		rootPanel.getOldLayoutElementMetrics(test2).cellsY = 2;
+		rootPanel.getOldLayoutElementMetrics(test2).relativeMinY = 25;
 		
 		Rectangle test3 = new Rectangle();
 		rootPanel.add(test3, 1, 2);
-		rootPanel.getMetrics(test3).cellsY =1;
+		rootPanel.getOldLayoutElementMetrics(test3).cellsY =1;
 		
 		
 		

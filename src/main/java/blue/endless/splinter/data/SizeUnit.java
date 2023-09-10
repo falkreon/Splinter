@@ -24,8 +24,6 @@
 
 package blue.endless.splinter.data;
 
-import blue.endless.splinter.Measurer;
-
 public enum SizeUnit {
 	/** Relative unit. Converts to a pixel value based on the layout space available. */
 	PERCENT,
@@ -38,8 +36,4 @@ public enum SizeUnit {
 	 * 'M'.
 	 */
 	EMS;
-	
-	public <T> void convert(Measurer<T> measurer) {
-		
-	}
 }

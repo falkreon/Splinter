@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.metrics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,13 +33,13 @@ import java.util.function.Supplier;
  * Represents arbitrarted grid sizes based on constraints
  */
 public class GridMetrics {
-	LayoutContainerMetrics containerMetrics;
-	int width = 1;
-	int height = 1;
-	Element[] xMetrics = new Element[4];
-	Element[] yMetrics = new Element[4];
-	List<Constraint> xConstraints = new ArrayList<>();
-	List<Constraint> yConstraints = new ArrayList<>();
+	public LayoutContainerMetrics containerMetrics;
+	public int width = 1;
+	public int height = 1;
+	public Element[] xMetrics = new Element[4];
+	public Element[] yMetrics = new Element[4];
+	public List<Constraint> xConstraints = new ArrayList<>();
+	public List<Constraint> yConstraints = new ArrayList<>();
 	
 	public GridMetrics() {
 		fillEmpties(xMetrics, Element::new);
@@ -156,7 +156,7 @@ public class GridMetrics {
 		existing.relativeSize = Math.max(existing.relativeSize, relative);
 	}
 	
-	protected void recalcStarts() {
+	public void recalcStarts() {
 		int xPos = 0;
 		for(Element metrics : xMetrics) {
 			metrics.location = xPos;
@@ -199,12 +199,12 @@ public class GridMetrics {
 	
 	/** Represents metrics for one row or column */
 	public static class Element {
-		int fixedSize = 0;
-		int relativeSize = 0;
-		boolean multiColumnApplied = false;
+		public int fixedSize = 0;
+		public int relativeSize = 0;
+		public boolean multiColumnApplied = false;
 		
-		int location = 0;
-		int size = 0;
+		public int location = 0;
+		public int size = 0;
 		
 		@Override
 		public String toString() {
@@ -214,11 +214,11 @@ public class GridMetrics {
 	
 	public static class Constraint {
 		/** Row or column index this grid constraint's leading edge is attached to */
-		int index = 0;
+		public int index = 0;
 		/** How many rows or columns this grid constraint reaches across */
-		int span = 1;
+		public int span = 1;
 		
-		int fixedSize = 0;
-		int relativeSize = 0;
+		public int fixedSize = 0;
+		public int relativeSize = 0;
 	}
 }

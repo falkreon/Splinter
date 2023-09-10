@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.metrics;
 
 import blue.endless.splinter.data.Alignment;
 import blue.endless.splinter.data.GrowType;

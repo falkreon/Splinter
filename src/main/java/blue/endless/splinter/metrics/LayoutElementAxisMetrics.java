@@ -22,13 +22,12 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.metrics;
 
 import blue.endless.splinter.data.Alignment;
 import blue.endless.splinter.data.GrowType;
-import blue.endless.splinter.data.Spacing;
 
-public class LayoutElementMetrics {
+public class LayoutElementAxisMetrics {
 	protected int location = 0;
 	/**
 	 * The element's cell coordinate on this metrics' axis.
@@ -40,14 +39,13 @@ public class LayoutElementMetrics {
 	 */
 	protected int naturalSize = -1;
 	
-	//Boxmodel time
-	Spacing margin = Spacing.DEFAULT_MARGIN;
-	Spacing border = Spacing.NONE;
-	Spacing padding = Spacing.DEFAULT_PADDING;
-	
 	GrowType growType;
 	Alignment alignment;
 	int fixedMin;
 	int relativeMin;
-		
+	
+	public LayoutElementAxisMetrics() {}
+	public LayoutElementAxisMetrics(int location) {
+		this.location = location;
+	}
 }

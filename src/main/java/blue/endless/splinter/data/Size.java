@@ -40,4 +40,14 @@ public record Size(int value, SizeUnit units) {
 	public static Size points(int value) {
 		return new Size(value, SizeUnit.POINTS);
 	}
+	
+	/**
+	 * Any function able to convert one size to another. UnitConversionContext conforms to this interface.
+	 * 
+	 * <p>Usage: <code>Size targetSize = converter.convert(sourceSize, targetSizeUnit);</code>
+	 */
+	@FunctionalInterface
+	public static interface Converter {
+		Size convert(Size sourceSize, SizeUnit targetSizeUnit);
+	}
 }

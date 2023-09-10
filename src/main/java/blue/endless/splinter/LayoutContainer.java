@@ -24,9 +24,16 @@
 
 package blue.endless.splinter;
 
+import blue.endless.splinter.data.Axis;
+import blue.endless.splinter.metrics.GridMetrics;
+import blue.endless.splinter.metrics.LayoutContainerMetrics;
+import blue.endless.splinter.metrics.LayoutElementAxisMetrics;
+import blue.endless.splinter.metrics.OldLayoutElementMetrics;
+
 public interface LayoutContainer {
 	public Iterable<? extends LayoutElement> getLayoutChildren();
-	public OldLayoutElementMetrics getLayoutElementMetrics(LayoutElement elem);
+	public OldLayoutElementMetrics getOldLayoutElementMetrics(LayoutElement elem);
+	public LayoutElementAxisMetrics getChildMetrics(LayoutElement elem, Axis axis);
 	
 	/**
 	 * Gets the layout-related settings for this container

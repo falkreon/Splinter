@@ -24,7 +24,7 @@
 
 package blue.endless.splinter.data;
 
-public record UnitConversionContext(double pixelsPerEm, double pixelsPerPoint, int sizeAvailable) {
+public record UnitConversionContext(double pixelsPerEm, double pixelsPerPoint, int sizeAvailable) implements Size.Converter {
 	public Size convert(Size size, SizeUnit targetUnit) {
 		//Convert size down to pixels
 		

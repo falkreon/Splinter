@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.Set;
 
 import blue.endless.splinter.data.GrowType;
+import blue.endless.splinter.metrics.GridMetrics;
+import blue.endless.splinter.metrics.LayoutContainerMetrics;
+import blue.endless.splinter.metrics.OldLayoutElementMetrics;
 
 public class Layout {
 	/**
@@ -52,7 +55,7 @@ public class Layout {
 		LayoutContainerMetrics containerMetrics = container.getLayoutContainerMetrics();
 		
 		for(LayoutElement elem : container.getLayoutChildren()) {
-			OldLayoutElementMetrics metrics = container.getLayoutElementMetrics(elem);
+			OldLayoutElementMetrics metrics = container.getOldLayoutElementMetrics(elem);
 			elementData.put(elem, metrics);
 			gridMetrics.ensureSpaceFor(metrics.cellX, metrics.cellY);
 		}
@@ -166,12 +169,12 @@ public class Layout {
 				int lastCellYEnd = gridMetrics.getCellTop(lastCellYIndex) + gridMetrics.getCellHeight(lastCellYIndex);
 				cellHeight = lastCellYEnd - cellY;
 				
-				int paddingLeft = containerMetrics.cellPadding; if (metrics.cellX>0) paddingLeft /= 2;
-				int paddingTop = containerMetrics.cellPadding; if (metrics.cellY>0) paddingTop /= 2;
-				int paddingRight = containerMetrics.cellPadding; if (metrics.cellX+(metrics.cellsX-1)<gridMetrics.width-1) paddingRight /= 2;
-				int paddingBottom = containerMetrics.cellPadding; if (metrics.cellY+(metrics.cellsY-1)<gridMetrics.height-1) paddingBottom /= 2;
+				int paddingLeft = containerMetrics.getCellPadding(); if (metrics.cellX>0) paddingLeft /= 2;
+				int paddingTop = containerMetrics.getCellPadding(); if (metrics.cellY>0) paddingTop /= 2;
+				int paddingRight = containerMetrics.getCellPadding(); if (metrics.cellX+(metrics.cellsX-1)<gridMetrics.width-1) paddingRight /= 2;
+				int paddingBottom = containerMetrics.getCellPadding(); if (metrics.cellY+(metrics.cellsY-1)<gridMetrics.height-1) paddingBottom /= 2;
 				
-				if (containerMetrics.collapseMargins) {
+				if (containerMetrics.getCollapseMargins()) {
 					paddingLeft = Math.max(metrics.paddingLeft, paddingLeft);
 					paddingTop = Math.max(metrics.paddingTop, paddingTop);
 					paddingRight = Math.max(metrics.paddingRight, paddingRight);
@@ -249,8 +252,8 @@ public class Layout {
 	private static void setInitial(GridMetrics.Element[] elements, int num, int totalSize, LayoutContainerMetrics containerMetrics) {
 		for(int i=0; i<num; i++) {
 			GridMetrics.Element elem = elements[i];
-			int resolvedFixed = (elem.fixedSize>0) ? elem.fixedSize+(containerMetrics.cellPadding*2) : 0;
-			int resolvedRelative = (elem.relativeSize>0) ? (int)((elem.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2) : 0;
+			int resolvedFixed = (elem.fixedSize>0) ? elem.fixedSize+(containerMetrics.getCellPadding()*2) : 0;
+			int resolvedRelative = (elem.relativeSize>0) ? (int)((elem.relativeSize/100.0)*totalSize)+(containerMetrics.getCellPadding()*2) : 0;
 			elem.size = Math.max(resolvedFixed, resolvedRelative);
 		}
 	}
@@ -264,8 +267,8 @@ public class Layout {
 	private static void stretchConstraint(GridMetrics.Element[] elements, GridMetrics.Constraint constraint, int totalSize, LayoutContainerMetrics containerMetrics) {
 		if (constraint.index+(constraint.span-1)>=elements.length) return; //This constraint doesn't...fit.
 		
-		int resolvedFixed = (constraint.fixedSize>0) ? constraint.fixedSize+(containerMetrics.cellPadding*2) : 0;
-		int resolvedRelative = (constraint.relativeSize>0) ? (int)((constraint.relativeSize/100.0)*totalSize)+(containerMetrics.cellPadding*2) : 0;
+		int resolvedFixed = (constraint.fixedSize>0) ? constraint.fixedSize+(containerMetrics.getCellPadding()*2) : 0;
+		int resolvedRelative = (constraint.relativeSize>0) ? (int)((constraint.relativeSize/100.0)*totalSize)+(containerMetrics.getCellPadding()*2) : 0;
 		int resolved = Math.max(resolvedFixed, resolvedRelative);
 		if (resolved==0) return; //shouldn't happen
 		

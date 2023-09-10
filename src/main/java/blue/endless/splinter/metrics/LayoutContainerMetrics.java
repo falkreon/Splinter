@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package blue.endless.splinter;
+package blue.endless.splinter.metrics;
 
 public class LayoutContainerMetrics {
 	protected int cellPadding;
@@ -33,8 +33,16 @@ public class LayoutContainerMetrics {
 		return this;
 	}
 	
+	public int getCellPadding() {
+		return cellPadding;
+	}
+	
 	public LayoutContainerMetrics setCollapseMargins(boolean collapseMargins) {
 		this.collapseMargins = collapseMargins;
 		return this;
+	}
+	
+	public boolean getCollapseMargins() {
+		return collapseMargins;
 	}
 }
