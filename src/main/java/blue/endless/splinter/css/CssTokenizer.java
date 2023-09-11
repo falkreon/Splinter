@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.Map;
 
-public class CssReader {
+public class CssTokenizer {
 	private static final char[] HEX_DIGITS = new char[] {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
@@ -19,11 +18,11 @@ public class CssReader {
 	
 	private final LookaheadReader in;
 	
-	public CssReader(Reader r) {
+	public CssTokenizer(Reader r) {
 		in = new LookaheadReader(r);
 	}
 	
-	public CssReader(String s) {
+	public CssTokenizer(String s) {
 		this(new StringReader(s));
 	}
 	
@@ -105,13 +104,21 @@ public class CssReader {
 	}
 	
 	private boolean isIdentStartCodePoint(int i) {
-		return Character.isUnicodeIdentifierStart(i);
-		//TODO: BLEH. w3c says it needs to be either a-zA-Z, non-ascii, or underscore. I don't care right now.
+		return
+				(i>='a' && i<='z') ||
+				(i>='A' && i<='Z') ||
+				(i == '_') ||
+				(i > 0xFF); //non-ascii
 	}
 	
 	private boolean isIdentCodePoint(int i) {
-		return Character.isUnicodeIdentifierPart(i);
-		//TODO: BLEH. w3c says it needs to be either identStart, digit, or minus. I don't care right now.
+		return
+				(i>='a' && i<='z') ||
+				(i>='A' && i<='Z') ||
+				(i>='0' && i<='9') ||
+				(i == '_') ||
+				(i == '-') ||
+				(i > 0xFF); //non-ascii
 	}
 	
 	/**
@@ -237,7 +244,7 @@ public class CssReader {
 	 * @return a WhitespaceToken containing the whitespace removed and consumed
 	 * @throws IOException if there was a problem reading character data
 	 */
-	private CssToken readWhitespace() throws IOException {
+	private CssToken consumeWhitespaceToken() throws IOException {
 		StringBuilder result = new StringBuilder();
 		result.append((char) in.read());
 		
@@ -248,13 +255,19 @@ public class CssReader {
 		return new CssToken(CssTokenType.WHITESPACE, result.toString());
 	}
 	
-	private boolean startsNumber(int i, int j, int k) throws IOException {
+	private boolean isNumberStart(int i, int j, int k) throws IOException {
 		if (i == '+' || i == '-') {
+			if (Character.isDigit(j)) return true;
 			
+			return (j == '.' && Character.isDigit(k));
+		} else if (i == '.') {
+			return Character.isDigit(j);
+		} else {
+			return Character.isDigit(i);
 		}
 	}
 	
-	private CssToken readNumber() throws IOException {
+	private String consumeNumber() throws IOException {
 		StringBuilder result = new StringBuilder();
 		
 		//If the next input code point is U+002B PLUS SIGN (+) or U+002D HYPHEN-MINUS (-), consume it and append it to repr.
@@ -314,7 +327,67 @@ public class CssReader {
 			}
 		}
 		
-		return new CssToken(CssTokenType.NUMBER, result.toString());
+		return result.toString();
+	}
+	
+	private CssToken consumeNumberToken() throws IOException {
+		//Consume a number and let number be the result.
+		String number = consumeNumber();
+		
+		//If the next 3 input code points would start an ident sequence, then:
+		String maybeIdent = in.peek(3);
+		if (isIdentStart(maybeIdent)) {
+			//Create a <dimension-token> with the same value and type flag as number, and a unit set initially to the empty string. 
+			//Consume an ident sequence. Set the <dimension-token>’s unit to the returned value. 
+			String ident = readIdentSequence();
+			return new CssToken(CssTokenType.DIMENSION, number + " " + ident); //TODO: preserve split values instead of de-tokenizing them like this
+		} else if (in.peek() == '%') {
+			//Otherwise, if the next input code point is (%), consume it. Create a <percentage-token> with the same value as number, and return it.
+			in.read();
+			return new CssToken(CssTokenType.PERCENTAGE, number);
+		}
+		
+		return new CssToken(CssTokenType.NUMBER, number);
+	}
+	
+	//W3C specifies that the function may be called this way, and what happens when it is called. But we don't use it here.
+	/*
+	private CssToken consumeStringToken() throws IOException {
+		int endingToken = in.read();
+		return consumeStringToken(endingToken);
+	}*/
+	
+	private CssToken consumeStringToken(int endingToken) throws IOException {
+		StringBuilder result = new StringBuilder();
+		while(!in.eof()) {
+			int cur = in.read();
+			if (cur == endingToken) {
+				return new CssToken(CssTokenType.STRING, result.toString());
+			} else if (cur == -1) {
+				//This is a parse error. Return the StringToken.
+				return new CssToken(CssTokenType.STRING, result.toString());
+			} else if (cur == '\n') {
+				in.pushback(cur);
+				return new CssToken(CssTokenType.BAD_STRING, result.toString());
+			} else if (cur == '\\') {
+				int nextCodePoint = in.peek();
+				//If the next input code point is EOF, do nothing.
+				if (nextCodePoint == -1) continue; //this will naturally wrap around to the EOF case above, log the error, and return STRING
+				
+				//Otherwise, if the next input code point is a newline, consume it.
+				if (nextCodePoint == '\n') {
+					in.read();
+				} else {
+					//We don't need to test if the stream starts with a valid escape, we have already satisfied these conditions.
+					result.appendCodePoint(consumeEscape());
+				}
+			} else {
+				result.append((char) cur);
+			}
+		}
+		
+		//should never reach here. Same as EOF case above: log a parse error and return the string
+		return new CssToken(CssTokenType.STRING, result.toString());
 	}
 	
 	public CssToken next() throws IOException {
@@ -323,15 +396,14 @@ public class CssReader {
 		if (isWhitespace(codePoint)) {
 			//Consume as much whitespace as possible and return WhitespaceToken
 			in.pushback(codePoint);
-			return readWhitespace();
+			return consumeWhitespaceToken();
 		}
 		
 		if (Character.isDigit(codePoint)) {
 			//pushback the input code point
 			in.pushback(codePoint);
-			
 			//consume a numeric token, and return it. 
-			return readNumber();
+			return consumeNumberToken();
 		}
 		
 		if (isIdentStartCodePoint(codePoint)) {
@@ -342,8 +414,7 @@ public class CssReader {
 		
 		return switch(codePoint) {
 			case '\"' -> {
-				//Consume a StringToken and return it
-				yield new CssToken(CssTokenType.BAD_STRING, ""); //TODO: Return good string
+				yield consumeStringToken(codePoint);
 			}
 			case '#' -> {
 				/**
@@ -366,42 +437,89 @@ public class CssReader {
 				yield CssToken.delim('#');
 			}
 			case '\'' -> {
-				yield new CssToken(CssTokenType.BAD_STRING, ""); //TODO: Return good string
+				yield consumeStringToken(codePoint);
 			}
 			
 			case '+' -> {
-				if (Character.isDigit(0))
-				//If followed by digits, push the + back, consume and return a NumberToken.
-				//If not followed by digits, return the + as DelimToken
+				int j = in.peek();
+				int k = in.peekFurther(1);
+				if (isNumberStart(codePoint, j, k)) {
+					in.pushback(codePoint);
+					yield consumeNumberToken();
+				}
+				//If the three code points were not a numberStart, return the + as DelimToken
 				yield CssToken.delim(codePoint);
 			}
 			
 			case '-' -> {
-				//If followed by digits, push the - back, consume and return a NumberToken.
-				//If followed by ->, like the full sequence is "-->", return a CDCToken
-				//If the inputStream starts with an Ident sequence, pushback the -; Consume and return an IdentLike token
-				//Otherwise, return the minus as a DelimToken
+				int j = in.peek();
+				int k = in.peekFurther(1);
+				if (isNumberStart(codePoint, j, k)) {
+					in.pushback(codePoint);
+					yield consumeNumberToken();
+				}
+				
+				if (j == '-' && k == '>') {
+					//consume the additional code points
+					in.read(); in.read();
+					yield CssToken.CDC;
+				}
+				
+				//Otherwise, if the input stream starts with an ident sequence
+				if (isIdentStart(codePoint, j, k)) {
+					//reconsume the current input code point, consume an ident-like token, and return it.
+					in.pushback(codePoint);
+					yield consumeIdentLikeToken();
+				}
+				
+				//Otherwise, return the + as DelimToken
 				yield CssToken.delim(codePoint);
 			}
 			case '.' -> {
-				//If followed by a digit, push the . back, consume and return a NumberToken.
+				//If the input stream starts with a number
+				int j = in.peek();
+				int k = in.peekFurther(1);
+				if (isNumberStart(codePoint, j, k)) {
+					//reconsume the current input code point, consume a numeric token, and return it.
+					in.pushback(codePoint);
+					yield consumeNumberToken();
+				}
 				//Otherwise return the period as a DelimToken.
-				yield CssToken.delim(codePoint);
+				yield CssToken.delim('.');
 			}
 			case '<' -> {
 				/*
-				 * If the next 3 input code points are "!--" (as in the full sequence was "<!--", consume them and return a CDOToken.
+				 * If the next 3 input code points are "!--" (as in the full sequence was "<!--",
 				 * Otherwise return the less-than as a DelimToken
 				 */
+				String jkl = in.peek(3);
+				if (jkl.equals("!--")) {
+					//consume them and return a CDOToken.
+					in.read(3);
+					yield CssToken.CDO;
+				}
 				yield CssToken.delim(codePoint);
 			}
 			case '@' -> {
-				//If the next 3 input code points would start an ident sequence, consume an ident sequence, create an AtKeywordToken with its value set to the ident sequence, and return it.
+				//If the next 3 input code points would start an ident sequence,
+				int j = in.peek();
+				int k = in.peekFurther(1);
+				int l = in.peekFurther(2);
+				if (isIdentStart(j,k,l)) {
+					//consume an ident sequence, create an AtKeywordToken with its value set to the ident sequence, and return it.
+					String keyword = readIdentSequence();
+					yield new CssToken(CssTokenType.AT_KEYWORD, keyword);
+				}
 				//Otherwise return the @ as a DelimToken
 				yield CssToken.delim(codePoint);
 			}
 			case '\\' -> {
-				//If the next code point is a valid escape, push the backslash back, read and return an IdentLikeToken.
+				//If the next code point is a valid escape,
+				if (isValidEscape(codePoint, in.peek())) {
+					//push the backslash back, read and return an IdentLikeToken.
+					in.pushback(codePoint);
+					yield consumeIdentLikeToken();
+				}
 				//If this isn't a valid escape, log a parse error here and return the slash as a DelimToken
 				yield CssToken.delim(codePoint);
 			}

@@ -28,12 +28,22 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.Map;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import blue.endless.splinter.Layout;
+import blue.endless.splinter.css.CssTokenizer;
+import blue.endless.splinter.css.PropertyKeys;
+import blue.endless.splinter.css.Style;
+import blue.endless.splinter.css.CssComponent;
+import blue.endless.splinter.css.CssParseError;
+import blue.endless.splinter.css.CssParser;
+import blue.endless.splinter.css.CssToken;
+import blue.endless.splinter.css.CssTokenType;
 
 public class NonUnitTest {
 	
@@ -72,7 +82,36 @@ public static void main(String... args) {
 			}
 		}*/
 		
+		final String input = """
+			border: #ffc;
+			background: rgb(20,20,255);
+			accent-color: rgba(1.0, 1.0, 1.0, 1.0);
+			width: 30px;
+			height: 12%;
+			""";
 		
+		try {
+			Style style = Style.of(input);
+			System.out.println(style);
+			
+			System.out.println("Width: "+style.get(PropertyKeys.WIDTH));
+			System.out.println("Height: "+style.get(PropertyKeys.HEIGHT));
+		} catch (CssParseError e) {
+			e.printStackTrace();
+		}
+		
+		
+		
+		/*
+		try {
+			CssParser parser = new CssParser(input);
+			List<CssComponent> declarations = parser.readDeclarationList();
+			System.out.println(declarations);
+		} catch (IOException | CssParseError e) {
+			e.printStackTrace();
+		}*/
+		
+		/*
 		final Rectangle rootPanel = new Rectangle();
 		rootPanel.getLayoutContainerMetrics().setCellPadding(16);
 		rootPanel.backgroundColor = new Color(0,0,0,0);
@@ -103,7 +142,7 @@ public static void main(String... args) {
 		};
 		layoutHost.setMinimumSize(new Dimension(600, 600));
 		layoutHost.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		layoutHost.setVisible(true);
+		layoutHost.setVisible(true);*/
 	}
 	
 	private static class LayoutContainer extends JPanel {
