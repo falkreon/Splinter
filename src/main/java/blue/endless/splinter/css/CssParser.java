@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public class CssParser {
 	private final LinkedList<CssComponent> components = new LinkedList<>();
@@ -125,10 +126,10 @@ public class CssParser {
 		//Shouldn't happen: fail as quickly and completely as possible if it does so it can get fixed
 		if (result.tokenType() != CssTokenType.AT_KEYWORD) throw new IllegalStateException("Tried to build an at-rule out of the wrong token!");
 		
-		while(!components.isEmpty()) {
+		while (!components.isEmpty()) {
 			CssComponent cur = nextComponent();
 			
-			switch(cur.tokenType()) {
+			switch (cur.tokenType()) {
 				case SEMICOLON -> { return result; }
 				case EOF -> { break; } //This is a parse error.
 				//Technically there is a case for {, but these have already been componentized and will be added by the case below.
@@ -137,6 +138,96 @@ public class CssParser {
 		}
 		
 		return result;
+	}
+	
+	public Optional<CssComponent> consumeQualifiedRule() {
+		StringBuilder prelude = new StringBuilder();
+		
+		while (!components.isEmpty()) {
+			CssComponent cur = nextComponent();
+			
+			switch(cur.tokenType()) {
+				case EOF -> { return Optional.empty(); } //This is a parse error.
+				case LBRACE -> {
+					return Optional.of(new CssComponent(CssTokenType.IDENT, prelude.toString(), cur.children()));
+				}
+				default -> {
+					if (prelude.length() != 0) prelude.append(' ');
+					prelude.append(cur.representation());
+				}
+			}
+		}
+		
+		return Optional.empty();
+	}
+	
+	/* 5.4.4 Consume a style block’s contents */
+	
+	public List<CssComponent> consumeStyleBlockContents() {
+		List<CssComponent> decls = new ArrayList<>();
+		List<CssComponent> rules = new ArrayList<>();
+		
+		loop:
+		while(!components.isEmpty()) {
+			CssComponent cur = nextComponent();
+			
+			switch(cur.tokenType()) {
+				case WHITESPACE -> {} // we don't care
+				case SEMICOLON -> {}  // we also don't care about empty statements
+				case EOF -> { break loop; } // This is unlikely, but a valid result condition
+				
+				case AT_KEYWORD -> rules.add(consumeAtRule());
+				case IDENT -> {
+					List<CssComponent> tempList = new ArrayList<>();
+					CssComponent temp = nextComponent();
+					while(temp.tokenType() != CssTokenType.SEMICOLON && temp.tokenType() != CssTokenType.EOF) {
+						tempList.add(temp);
+						temp = nextComponent();
+					}
+					
+					try {
+						CssComponent component = CssParser.ofComponents(tempList).readDeclaration();
+						decls.add(component);
+					} catch (CssParseError err) {
+						//Don't add it to the list
+					}
+				}
+				
+				case DELIMITER -> {
+					if (cur.value().equals("&")) {
+						pushback(cur);
+						consumeQualifiedRule().ifPresent(rules::add);
+					} else {
+						/* This is an error. Reconsume the current input token. As long as the next input token is
+						 * anything other than a semicolon or EOF, consume a component value and throw away the returned
+						 * value. 
+						 */
+						
+						while(!components.isEmpty()) {
+							cur = peek();
+							if (cur.tokenType() == CssTokenType.SEMICOLON || cur.tokenType() == CssTokenType.EOF) break;
+							nextComponent();
+						}
+					}
+				}
+				
+				default -> {
+					/* This is an error. Reconsume the current input token. As long as the next input token is
+					 * anything other than a semicolon or EOF, consume a component value and throw away the returned
+					 * value. 
+					 */
+					
+					while(!components.isEmpty()) {
+						cur = peek();
+						if (cur.tokenType() == CssTokenType.SEMICOLON || cur.tokenType() == CssTokenType.EOF) break;
+						nextComponent();
+					}
+				}
+			}
+		}
+		
+		decls.addAll(rules);
+		return decls;
 	}
 	
 	/**

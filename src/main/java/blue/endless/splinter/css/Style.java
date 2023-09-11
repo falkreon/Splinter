@@ -90,7 +90,10 @@ public class Style {
 			
 			Style style = new Style();
 			for(CssComponent comp : declarations) {
-				style.data.put(comp.value(), comp.children());
+				//At-rules and other productions here don't appear to be a parse error, but the w3c spec doesn't use them for anything.
+				if (comp.tokenType() == CssTokenType.IDENT) {
+					style.data.put(comp.value(), comp.children());
+				}
 			}
 			
 			return style;
