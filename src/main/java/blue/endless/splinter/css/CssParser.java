@@ -119,6 +119,26 @@ public class CssParser {
 		components.addFirst(component);
 	}
 	
+	public CssComponent consumeAtRule() {
+		CssComponent result = nextComponent();
+		
+		//Shouldn't happen: fail as quickly and completely as possible if it does so it can get fixed
+		if (result.tokenType() != CssTokenType.AT_KEYWORD) throw new IllegalStateException("Tried to build an at-rule out of the wrong token!");
+		
+		while(!components.isEmpty()) {
+			CssComponent cur = nextComponent();
+			
+			switch(cur.tokenType()) {
+				case SEMICOLON -> { return result; }
+				case EOF -> { break; } //This is a parse error.
+				//Technically there is a case for {, but these have already been componentized and will be added by the case below.
+				default -> result.children().add(cur);
+			}
+		}
+		
+		return result;
+	}
+	
 	/**
 	 * Reads an Ident component, which starts a style rule declaration, and folds the contents of the declaration into
 	 * the ident's children.
@@ -158,7 +178,8 @@ public class CssParser {
 				case WHITESPACE -> {} //Do nothing
 				case SEMICOLON -> {} //Do nothing (surprising!)
 				case AT_KEYWORD -> {
-					//Consume an AtRule
+					pushback(cur);
+					declarations.add(consumeAtRule());
 				}
 				case IDENT -> {
 					ArrayList<CssComponent> tempList = new ArrayList<>();

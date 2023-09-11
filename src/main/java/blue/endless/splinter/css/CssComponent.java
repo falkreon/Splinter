@@ -65,8 +65,25 @@ public record CssComponent(CssTokenType tokenType, String value, List<CssCompone
 			case HASH -> {
 				yield '#' + value;
 			}
+			case STRING -> '\"' + value + '\"';
 			case DIMENSION -> value;
 			case PERCENTAGE -> value + "%";
+			case AT_KEYWORD -> {
+				if (children.isEmpty()) yield "@"+value;
+				
+				StringBuilder builder = new StringBuilder();
+				builder.append('@');
+				builder.append(value);
+				builder.append("{ ");
+				for(CssComponent child : children) {
+					builder.append(child.representation());
+					builder.append(' ');
+				}
+				builder.setLength(builder.length() - 1);
+				builder.append("}");
+				
+				yield builder.toString();
+			}
 			default -> {
 				if (children.isEmpty()) yield tokenType.name().toLowerCase(Locale.ROOT);
 				

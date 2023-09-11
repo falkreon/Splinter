@@ -84,8 +84,19 @@ public static void main(String... args) {
 		
 		final String input = """
 			border: #ffc;
+			@charset "utf-8";
 			background: rgb(20,20,255);
 			accent-color: rgba(1.0, 1.0, 1.0, 1.0);
+			@keyframes slidein {
+				from {
+					transform: translateX(0%);
+				}
+
+				to {
+					transform: translateX(100%);
+				}
+			}
+
 			width: 30px;
 			height: 12%;
 			""";
